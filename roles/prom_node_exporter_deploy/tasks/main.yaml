@@ -47,7 +47,7 @@
     state: absent
 
 
-- name: Copy service file on host
+- name: Copy env file on host
   ansible.builtin.copy:
     src: node_exporter.env
     dest: /etc/sysconfig/node_exporter
