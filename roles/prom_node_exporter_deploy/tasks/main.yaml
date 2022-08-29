@@ -1,0 +1,76 @@
+---
+- name: Create download directory
+  ansible.builtin.file:
+    path: "{{ tar_download_path }}"
+    state: directory
+    mode: '0755'
+
+- name: Download node exporter tar
+  ansible.builtin.get_url:
+    url: "{{ tar_download_url}}"
+    dest: "{{ tar_download_path }}/node_exporter.tar.gz"
+    mode: '0440'
+
+- name: Unarchive node exporter tar
+  ansible.builtin.unarchive:
+    src: "{{ tar_download_path }}/node_exporter.tar.gz"
+    dest: "{{ tar_download_path }}"
+    remote_src: yes
+
+- name: Add node exporter user
+  ansible.builtin.user:
+    name: node_exporter
+    comment: Node Exporter user
+    shell: "/bin/false"
+    system: yes
+
+- name: Copy node exporter binary to /usr/local/bin
+  ansible.builtin.copy:
+    src: "{{ tar_download_path }}/node_exporter-{{ node_exporter_version }}.{{ node_exporter_release }}/node_exporter"
+    dest: /usr/local/bin
+    owner: node_exporter
+    group: node_exporter
+    remote_src: yes
+    mode: '0775'
+
+- name: Copy service file on host
+  ansible.builtin.copy:
+    src: node_exporter.service
+    dest: /etc/systemd/system/node_exporter.service
+    owner: node_exporter
+    group: node_exporter
+    mode: '0644'
+
+- name: Remove download directory
+  ansible.builtin.file:
+    path: "{{ tar_download_path }}"
+    state: absent
+
+
+- name: Copy service file on host
+  ansible.builtin.copy:
+    src: node_exporter.env
+    dest: /etc/sysconfig/node_exporter
+    owner: node_exporter
+    group: node_exporter
+    mode: '0644'
+
+- name: Open node_exporter port
+  ansible.posix.firewalld:
+    zone: public
+    port: 9100/tcp
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: Force systemd to reread configs
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: Start and enable node exporter service
+  ansible.builtin.systemd:
+    state: started
+    enabled: yes
+    name: node_exporter
+
+
