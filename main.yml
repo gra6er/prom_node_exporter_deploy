@@ -1,0 +1,21 @@
+---
+- name: Install Prometheus node exporter on host
+  hosts: on_monitoring
+  gather_facts: no
+  roles:
+    - role: prom_node_exporter_deploy
+
+- name: Add new hosts on server
+  hosts: prom_server
+  gather_facts: no
+  tasks:
+    - name: Add new target to server config
+      lineinfile:
+        path: "/opt/prometheus/targets_node_exporters.yml"
+        line: "  - {{hostvars[item].inventory_hostname }}:9100"
+      loop: "{{ groups['on_monitoring'] }}"
+
+    - name: Make SIGHUP signal in prometheus container to reload configs
+      community.docker.docker_container_exec:
+        container: prometheus
+        command: kill -SIGHUP 1

@@ -1,6 +1,0 @@
----
-- name: Install Prometheus node exporter on host
-  hosts: on_monitoring
-  gather_facts: no
-  roles:
-    - role: prom_node_exporter_deploy

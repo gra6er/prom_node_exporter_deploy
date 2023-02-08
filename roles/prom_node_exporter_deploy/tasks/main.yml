@@ -73,4 +73,10 @@
     enabled: yes
     name: node_exporter
 
+- debug:
+    msg: "--> {{ hostvars[item] }}"
+  loop: "{{ groups['on_monitoring'] }}"
+
+
+
 
